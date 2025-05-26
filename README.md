@@ -1,4 +1,4 @@
-# Gata-Petals-Estimator
+# Petals-Estimator
 
 A Python toolkit for estimating latency, throughput, and storage requirements of distributed LLM inference using the [Petals](https://github.com/bigscience-workshop/petals/) approach. This project enables researchers and engineers to analyze performance trade‑offs across different hardware configurations, network conditions, and model parameters.
 
