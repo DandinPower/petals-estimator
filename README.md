@@ -42,8 +42,8 @@ dandinpower-petals-estimator/
 1. Clone this repository:
 
    ```bash
-   git clone https://github.com/yourusername/dandinpower-petals-estimator.git
-   cd dandinpower-petals-estimator
+   git clone https://github.com/DandinPower/petals-estimator.git
+   cd petals-estimator
    ```
 2. Install required packages:
 
@@ -94,10 +94,6 @@ python main.py
 * **ModelConfig**: Edit `src/petals_estimator/config.py` to adjust hidden size, number of layers, precision, etc.
 * **ServerConfig Examples**: In `src/petals_estimator/server_config_example.py`, customize `get_*_example` functions or add new GPU profiles.
 * **Client & Network**: Modify `ClientConfig` and `NetworkConfig` parameters in each script's `create_configuration()`.
-
-## Contributing
-
-Contributions, issues, and feature requests are welcome! Please open an issue or submit a pull request on GitHub.
 
 ## License
 
