@@ -32,18 +32,24 @@ def create_configuration() -> tuple[ModelConfig, list[ServerConfig], ClientConfi
     #     get_2060_example(download_network_bandwidth, upload_network_bandwidth, 5),
     # ]
     
-    server_configs = [
-        get_4060_example(download_network_bandwidth, upload_network_bandwidth, 20),
-        get_4060_example(download_network_bandwidth, upload_network_bandwidth, 20),
-        get_4060_example(download_network_bandwidth, upload_network_bandwidth, 20),
-        get_4060_example(download_network_bandwidth, upload_network_bandwidth, 20),
-    ]
+    # server_configs = [
+    #     get_4060_example(download_network_bandwidth, upload_network_bandwidth, 20),
+    #     get_4060_example(download_network_bandwidth, upload_network_bandwidth, 20),
+    #     get_4060_example(download_network_bandwidth, upload_network_bandwidth, 20),
+    #     get_4060_example(download_network_bandwidth, upload_network_bandwidth, 20),
+    # ]
     
     # server_configs = [
     #     get_4070ti_example(download_network_bandwidth, upload_network_bandwidth, 30),
     #     get_4070ti_example(download_network_bandwidth, upload_network_bandwidth, 30),
     #     get_4070ti_example(download_network_bandwidth, upload_network_bandwidth, 20),
     # ]
+    
+    server_configs = [
+        get_4090_example(download_network_bandwidth, upload_network_bandwidth, 30),
+        get_4090_example(download_network_bandwidth, upload_network_bandwidth, 30),
+        get_4090_example(download_network_bandwidth, upload_network_bandwidth, 20),
+    ]
     
     # server_configs = [
     #     get_4090_example(download_network_bandwidth, upload_network_bandwidth, 40),
@@ -56,7 +62,7 @@ def create_configuration() -> tuple[ModelConfig, list[ServerConfig], ClientConfi
         dram_bandwidth=50e9                 # 50 GB/s
     )
     network_config = NetworkConfig(
-        fixed_rtt=50e-3
+        fixed_rtt=5e-3
     )
     
     return model_config, server_configs, client_config, network_config
@@ -66,14 +72,16 @@ def main():
     model_config, server_configs, client_config, nework_config = create_configuration()
     estimator = PetalsEstimator(model_config, server_configs, client_config, nework_config)
 
-    test_settings = [(pow(2, i+9), 1) for i in range(8)]
+    # test_settings = [(pow(2, i+8), 1) for i in range(9)]
 
-    # --- Storage stackplots (in GB) ---
-    seq_lens = [s for s,_ in test_settings]
-    batch_size = 1
+    # # --- Storage stackplots (in GB) ---
+    # seq_lens = [s for s,_ in test_settings]
+    # batch_size = 1
 
-    for seq in seq_lens:
-        _ = estimator.run_and_print(seq, batch_size)
+    # for seq in seq_lens:
+    #     _ = estimator.run_and_print(seq, batch_size)
+    
+    _ = estimator.run_and_print(2048, 1)
         
 
 if __name__ == "__main__":

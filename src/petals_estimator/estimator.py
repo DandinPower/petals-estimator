@@ -238,7 +238,7 @@ class PetalsEstimator:
 
         results = self.estimate_total_latency(seq_len, batch_size)
         total_latency = sum(results.values())
-        current_token_per_seconds = 1 / total_latency
+        current_token_per_seconds = batch_size * (1 / total_latency)
         print(f"Config: context={seq_len:<4}  batch={batch_size:<2} -> Total latency: {total_latency*1000:6.2f} ms | Throughput (token/s): {current_token_per_seconds}")
         print("Component-wise breakdown:")
         print(f"{'Component':50s} {'Latency (ms)':>12s}")
