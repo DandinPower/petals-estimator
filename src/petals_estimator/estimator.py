@@ -1,8 +1,8 @@
 import random
 from collections import defaultdict
 
-from config import ModelConfig, ServerConfig, ClientConfig, NetworkConfig
-from utils import pretty_print_storage, EstimateResults
+from src.petals_estimator.config import ModelConfig, ServerConfig, ClientConfig, NetworkConfig
+from src.petals_estimator.utils import pretty_print_storage, EstimateResults
 
 class PetalsEstimator:
     def __init__(self, model_config: ModelConfig, server_configs: list[ServerConfig], client_config: ClientConfig, network_config: NetworkConfig):
@@ -255,3 +255,8 @@ class PetalsEstimator:
             seq_len=seq_len,
             token_per_s=current_token_per_seconds
         )
+        
+    def run(self, seq_len: int, batch_size: int) -> EstimateResults:
+        results = self.estimate_total_latency(seq_len, batch_size)
+        total_latency = sum(results.values())
+        return EstimateResults(seq_len=seq_len, token_per_s=1 / total_latency)

@@ -1,4 +1,4 @@
-from config import ServerConfig
+from src.petals_estimator.config import ServerConfig
 
 def get_2060_example(download_network_bandwidth: float, upload_network_bandwidth: float, num_blocks: int) -> ServerConfig:
     return ServerConfig(
