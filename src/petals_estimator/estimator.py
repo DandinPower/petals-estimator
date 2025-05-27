@@ -175,14 +175,14 @@ class PetalsEstimator:
             if i == 0: # On the first server, communication time includes transmission from client to server
                 comm_bw = min(self.client_config.upload_network_bandwidth, server.download_network_bandwidth)   # Use the lower bandwidth between client upload and server download
                 inputs_comm_latency = inputs_bytes / comm_bw
-                inputs_comm_latency += self._get_random_rtt()
+                inputs_comm_latency += (self._get_random_rtt() / 2)
                 latency_components["(comm)first_server_inputs_comm_latency"] += inputs_comm_latency
             else:   # On the other server, the communication happen here is from previous server to next server and also previous server to client
                 previous_server = self.server_configs[i - 1]
                 previous_server_bw = previous_server.upload_network_bandwidth / 2 # This needs to be divided by two because the data is sent to both the client and the next server simultaneously
                 comm_bw = min(server.download_network_bandwidth, previous_server_bw)
                 inputs_comm_latency = inputs_bytes / comm_bw
-                inputs_comm_latency += self._get_random_rtt()
+                inputs_comm_latency += (self._get_random_rtt() / 2)
                 latency_components["(comm)total_server_to_server_inputs_comm_latency"] += inputs_comm_latency
                 # The below is happen at the same time for Client but because it can happen async in the background and the major inference forward process is still happen because the inputs for next server is already send from previous server to next server
                 # a. received "outputs" from previous server
@@ -217,7 +217,7 @@ class PetalsEstimator:
             if i == len(self.server_configs) - 1:
                 comm_bw = min(self.client_config.upload_network_bandwidth, server.download_network_bandwidth)   # Use the lower bandwidth between server upload and client download
                 outputs_comm_latency = outputs_bytes / comm_bw
-                outputs_comm_latency += self._get_random_rtt()
+                outputs_comm_latency += (self._get_random_rtt() / 2)
                 latency_components["(comm)last_server_outputs_comm_latency"] += inputs_comm_latency
 
         compute_logits_latency = 0 

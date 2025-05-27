@@ -62,7 +62,7 @@ def create_configuration() -> tuple[ModelConfig, list[ServerConfig], ClientConfi
         dram_bandwidth=50e9                 # 50 GB/s
     )
     network_config = NetworkConfig(
-        fixed_rtt=5e-3
+        fixed_rtt=50e-3
     )
     
     return model_config, server_configs, client_config, network_config
