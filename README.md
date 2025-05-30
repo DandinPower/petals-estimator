@@ -63,9 +63,11 @@ python latency_estimation_main.py
 
 Plots will be saved under the `figures/` directory:
 
+* `theoratical_throughput_by_servers.png`
 * `throughput_by_servers.png`
 * `throughput_by_gpu.png`
 * `throughput_by_rtt.png`
+* `theoratical_throughput_by_rtt.png`
 * `throughput_by_bandwidth.png`
 
 ### 2. Storage Estimation
