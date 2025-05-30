@@ -141,6 +141,20 @@ class PetalsEstimator:
             
         return client_storage, server_storage
         
+    def estimate_theoratical_latency(self, seq_len: int, batch_size: int) -> dict[str, float]:
+        """
+        Estimate the total latency by considering only the minimum communication latency, as this is the component that cannot be optimized. Exclude other potential latencies that might be improved, such as server status checks or ping times.
+        """
+        latency_components = defaultdict(int)
+        for i, server in enumerate(self.server_configs):
+            if i == 0: # On the first server, communication time includes transmission from client to server
+                latency_components["(comm)first_server_inputs_comm_latency"] += self._get_random_rtt() / 2
+            else:   # On the other server, the communication happen here is from previous server to next server and also previous server to client
+                latency_components["(comm)total_server_to_server_inputs_comm_latency"] += self._get_random_rtt() / 2
+            # After finished all computation, send the outputs to client and next server, since "server to server" communication latency already be estimated above, here we only consider the last server scenario, which is the last server need to transfer the outputs back to client
+            if i == len(self.server_configs) - 1:
+                latency_components["(comm)last_server_outputs_comm_latency"] += self._get_random_rtt() / 2
+        return latency_components
     
     def estimate_total_latency(self, seq_len: int, batch_size: int) -> dict[str, float]:
         """
@@ -173,14 +187,14 @@ class PetalsEstimator:
         for i, server in enumerate(self.server_configs):
             inputs_bytes = batch_size * 1 * self.model_config.hidden_size * self.model_config.activation_precision_bytes # Due to the KV Cache, the inputs size is just one token's hidden vector
             if i == 0: # On the first server, communication time includes transmission from client to server
-                comm_bw = min(self.client_config.upload_network_bandwidth, server.download_network_bandwidth)   # Use the lower bandwidth between client upload and server download
+                comm_bw = min(self.client_config.upload_network_bandwidth, server.download_network_bandwidth) / 8   # Use the lower bandwidth between client upload and server download
                 inputs_comm_latency = inputs_bytes / comm_bw
                 inputs_comm_latency += (self._get_random_rtt() / 2)
                 latency_components["(comm)first_server_inputs_comm_latency"] += inputs_comm_latency
             else:   # On the other server, the communication happen here is from previous server to next server and also previous server to client
                 previous_server = self.server_configs[i - 1]
                 previous_server_bw = previous_server.upload_network_bandwidth / 2 # This needs to be divided by two because the data is sent to both the client and the next server simultaneously
-                comm_bw = min(server.download_network_bandwidth, previous_server_bw)
+                comm_bw = min(server.download_network_bandwidth, previous_server_bw) / 8
                 inputs_comm_latency = inputs_bytes / comm_bw
                 inputs_comm_latency += (self._get_random_rtt() / 2)
                 latency_components["(comm)total_server_to_server_inputs_comm_latency"] += inputs_comm_latency
@@ -215,10 +229,10 @@ class PetalsEstimator:
             
             # After finished all computation, send the outputs to client and next server, since "server to server" communication latency already be estimated above, here we only consider the last server scenario, which is the last server need to transfer the outputs back to client
             if i == len(self.server_configs) - 1:
-                comm_bw = min(self.client_config.upload_network_bandwidth, server.download_network_bandwidth)   # Use the lower bandwidth between server upload and client download
+                comm_bw = min(self.client_config.upload_network_bandwidth, server.download_network_bandwidth) / 8  # Use the lower bandwidth between server upload and client download
                 outputs_comm_latency = outputs_bytes / comm_bw
                 outputs_comm_latency += (self._get_random_rtt() / 2)
-                latency_components["(comm)last_server_outputs_comm_latency"] += inputs_comm_latency
+                latency_components["(comm)last_server_outputs_comm_latency"] += outputs_comm_latency
 
         compute_logits_latency = 0 
         latency_components["(compute&memory)compute_logits_latency"] += compute_logits_latency
@@ -258,5 +272,10 @@ class PetalsEstimator:
         
     def run(self, seq_len: int, batch_size: int) -> EstimateResults:
         results = self.estimate_total_latency(seq_len, batch_size)
+        total_latency = sum(results.values())
+        return EstimateResults(seq_len=seq_len, token_per_s=1 / total_latency)
+    
+    def run_theoratical_estimation(self, seq_len: int, batch_size: int) -> EstimateResults:
+        results = self.estimate_theoratical_latency(seq_len, batch_size)
         total_latency = sum(results.values())
         return EstimateResults(seq_len=seq_len, token_per_s=1 / total_latency)

@@ -13,7 +13,7 @@ BATCH_SIZE = 1
 
 # 1) Vary number of servers (all 4090)
 def plot_by_server_count():
-    server_counts = [8, 10, 16, 20]
+    server_counts = [4, 8, 10, 16, 20]
     plt.figure()
     for count in server_counts:
         # build configuration
@@ -41,12 +41,13 @@ def plot_by_gpu_type():
     gpu_funcs = [get_2060_example, get_4060_example, get_4070ti_example, get_4090_example]
     labels = ['RTX2060', 'RTX4060', 'RTX4070Ti', 'RTX4090']
     plt.figure()
+    num_servers = 4
     for fn, label in zip(gpu_funcs, labels):
         model_cfg, _, client_cfg, network_cfg = create_base_configs()
         # two servers of this GPU
         server_cfgs = [fn(client_cfg.download_network_bandwidth,
                           client_cfg.upload_network_bandwidth,
-                          num_blocks=model_cfg.num_layers // 8)] * 8
+                          num_blocks=model_cfg.num_layers // num_servers)] * num_servers
         estimator = PetalsEstimator(model_cfg, server_cfgs, client_cfg, network_cfg)
         throughputs = [estimator.run(seq, BATCH_SIZE).token_per_s for seq in TEST_SEQ_LENS]
         plt.plot(TEST_SEQ_LENS, throughputs, marker='o', label=label)
@@ -63,12 +64,13 @@ def plot_by_gpu_type():
 def plot_by_rtt():
     rtts = [10e-3, 50e-3, 200e-3, 500e-3]
     plt.figure()
+    num_servers = 4
     for rtt in rtts:
         model_cfg, _, client_cfg, network_cfg = create_base_configs()
         network_cfg.fixed_rtt = rtt
         server_cfgs = [get_4090_example(client_cfg.download_network_bandwidth,
                                         client_cfg.upload_network_bandwidth,
-                                        num_blocks=model_cfg.num_layers // 8)] * 8
+                                        num_blocks=model_cfg.num_layers // num_servers)] * num_servers
         estimator = PetalsEstimator(model_cfg, server_cfgs, client_cfg, network_cfg)
         throughputs = [estimator.run(seq, BATCH_SIZE).token_per_s for seq in TEST_SEQ_LENS]
         plt.plot(TEST_SEQ_LENS, throughputs, marker='o', label=f"RTT={rtt*1e3:.0f}ms")
@@ -85,13 +87,14 @@ def plot_by_rtt():
 def plot_by_bandwidth():
     bws = [50e6, 100e6, 200e6, 400e6]  # in B/s
     plt.figure()
+    num_servers = 4
     for bw in bws:
         model_cfg, _, client_cfg, network_cfg = create_base_configs()
         client_cfg.download_network_bandwidth = client_cfg.upload_network_bandwidth = bw
-        server_cfgs = [get_4090_example(bw, bw, num_blocks=model_cfg.num_layers // 8)] * 8
+        server_cfgs = [get_4090_example(bw, bw, num_blocks=model_cfg.num_layers // num_servers)] * num_servers
         estimator = PetalsEstimator(model_cfg, server_cfgs, client_cfg, network_cfg)
         throughputs = [estimator.run(seq, BATCH_SIZE).token_per_s for seq in TEST_SEQ_LENS]
-        plt.plot(TEST_SEQ_LENS, throughputs, marker='o', label=f"BW={bw/1e6:.0f}MB/s")
+        plt.plot(TEST_SEQ_LENS, throughputs, marker='o', label=f"BW={bw/1e6:.0f}Mbits/s")
     plt.xscale('log', base=2)
     
     plt.xlabel('Sequence Length')
@@ -100,6 +103,54 @@ def plot_by_bandwidth():
     plt.legend()
     plt.grid(True)
     plt.savefig('figures/throughput_by_bandwidth.png', dpi=300)
+
+# 5) Vary number of servers (theoratical estimation)
+def plot_by_server_count_theoratically():
+    server_counts = [4, 8, 10, 16, 20]
+    plt.figure()
+    for count in server_counts:
+        # build configuration
+        model_cfg, _, client_cfg, network_cfg = create_base_configs()
+        server_cfgs = [get_4090_example(client_cfg.download_network_bandwidth,
+                                        client_cfg.upload_network_bandwidth,
+                                        num_blocks=80 // count)] * count
+        estimator = PetalsEstimator(model_cfg, server_cfgs, client_cfg, network_cfg)
+        throughputs = []
+        for seq in TEST_SEQ_LENS:
+            res: EstimateResults = estimator.run_theoratical_estimation(seq, BATCH_SIZE)
+            throughputs.append(res.token_per_s)
+        plt.plot(TEST_SEQ_LENS, throughputs, marker='o', label=f"{count} servers")
+    plt.xscale('log', base=2)
+    
+    plt.xlabel('Sequence Length')
+    plt.ylabel('Tokens/sec')
+    plt.title('Decoding Throughput vs Seq Length by Server Count')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('figures/theoratical_throughput_by_servers.png', dpi=300)
+
+# 6) Vary RTT (theroratical estimation)
+def plot_by_rtt_theoratically():
+    rtts = [10e-3, 50e-3, 200e-3, 500e-3]
+    num_servers = 4
+    plt.figure()
+    for rtt in rtts:
+        model_cfg, _, client_cfg, network_cfg = create_base_configs()
+        network_cfg.fixed_rtt = rtt
+        server_cfgs = [get_4090_example(client_cfg.download_network_bandwidth,
+                                        client_cfg.upload_network_bandwidth,
+                                        num_blocks=model_cfg.num_layers // num_servers)] * num_servers
+        estimator = PetalsEstimator(model_cfg, server_cfgs, client_cfg, network_cfg)
+        throughputs = [estimator.run_theoratical_estimation(seq, BATCH_SIZE).token_per_s for seq in TEST_SEQ_LENS]
+        plt.plot(TEST_SEQ_LENS, throughputs, marker='o', label=f"RTT={rtt*1e3:.0f}ms")
+    plt.xscale('log', base=2)
+    
+    plt.xlabel('Sequence Length')
+    plt.ylabel('Tokens/sec')
+    plt.title('Decoding Throughput vs Seq Length by RTT')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('figures/theoratical_throughput_by_rtt.png', dpi=300)
 
 # Helper to create base model, client, network configurations
 def create_base_configs():
@@ -125,6 +176,8 @@ def main():
     plot_by_gpu_type()
     plot_by_rtt()
     plot_by_bandwidth()
+    plot_by_server_count_theoratically()
+    plot_by_rtt_theoratically()
 
 if __name__ == '__main__':
     main()

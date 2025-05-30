@@ -25,16 +25,16 @@ class ServerConfig:
     ops_utilization: float # pecentage
     pcie_bandwidth: float # B/s
     vram_bandwidth: float  # B/s
-    download_network_bandwidth: float  # B/s
-    upload_network_bandwidth: float  # B/s
+    download_network_bandwidth: float  # bits/s
+    upload_network_bandwidth: float  # bits/s
     num_blocks: int  # Number of transformer blocks on this server
 
 @dataclass
 class ClientConfig:
     """Client configuration"""
-    download_network_bandwidth: float  # B/s
-    upload_network_bandwidth: float  # B/s
-    dram_bandwidth: float # B/s
+    download_network_bandwidth: float  # bits/s
+    upload_network_bandwidth: float  # bits/s
+    dram_bandwidth: float # bits/s
     # Only used to calculate the load and store operations for the server's input cache.
 
 @dataclass
